@@ -52,7 +52,7 @@ const Toma = React.createClass({
     },
     drawrow: function(row,y) {
 	for (var i = 0; i < row.length; i++) {
-	    if (row[i] !== 0) {
+	    if (row[i] === 1) {
 		this.context.fillStyle="pink";
 		this.context.fillRect(i*this.state.scale, y*this.state.scale, this.state.scale, this.state.scale);
 	    }
@@ -150,7 +150,7 @@ const App = React.createClass({
     rrow:function() {
 	var row = [];
 	for (var i = 0; i < w; i++) {
-	    row.push(_.random(k));
+	    row.push(_.random(10000));
 	}
 	return row;
     },
