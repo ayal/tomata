@@ -2,11 +2,11 @@
 var _ = require('lodash');
 
 var k = 1;
-var scale = 3;
+var scale = 1;
 var cols = 3;
 var rules = Math.pow(2,Math.pow(2,cols));
 
-var w = 200;
+var w = 500;
 
 // react
 require("./style.less");
@@ -165,7 +165,7 @@ const App = React.createClass({
 	    <input ref="rule" value={this.state.ruleText} onChange={this.changeRuleText} />
 	    <button onClick={this.setRuleByText}>go</button>
 	    <button onClick={this.rrule}>random rule</button>
-	    <Toma w={w} scale={scale} rule={rule} rrow={this.rrow} h={200} y={0} />
+	    <Toma w={w} scale={scale} rule={rule} rrow={this.rrow} h={500} y={0} />
 	    </div>
 	);
     }
