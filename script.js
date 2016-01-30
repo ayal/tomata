@@ -61,10 +61,11 @@ const Toma = React.createClass({
     calcnext: function(row,times) {
 	var next = [];
 	times = times || 1;
-	var brule = this.props.rule.toString(2);
+	var brule = this.props.rule.toString(2).split('').reverse().join('');
 	for (var j = 0; j < times; j++) {
 	    for (var i = 0; i < row.length; i++) {
 		var num = parseInt('' + row[i % row.length] + row[(i+1) % row.length] + row[(i+2) % row.length], 2);
+
 		var np = parseInt(brule[num] || '0')
 		next[i+1] = np;
 	    }
@@ -75,7 +76,7 @@ const Toma = React.createClass({
 	return row;
     },
     paint: function(context) {
-
+	
 	var row = this.state.firstrow;
 	this.context.save();
 	for (var y = 0; y < this.props.h; y++) {
@@ -150,7 +151,12 @@ const App = React.createClass({
     rrow:function() {
 	var row = [];
 	for (var i = 0; i < w; i++) {
-	    row.push(_.random(10000));
+	    if (i === w / 2) {
+		row.push(1);
+	    }
+	    else {
+		row.push(0);
+	    }
 	}
 	return row;
     },
@@ -158,7 +164,7 @@ const App = React.createClass({
 	this.setState({ruleText:e.target.value})
     },
     render: function() {
-	var rule = parseInt(this.props.location.query.rule) || _.random(rules);
+	var rule = this.props.location.query.rule ? parseInt(this.props.location.query.rule) : _.random(rules);
 	console.log('rendering app', rule)
 	return (
 	    <div>
