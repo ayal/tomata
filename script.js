@@ -139,7 +139,7 @@ const App = React.createClass({
         return null;
     },
     setRule: function(r) {
-        this.history.pushState(null, '/', {rule:r});
+        this.history.pushState(null, '/tomata/', {rule:r});
     },
     setRuleByText: function(e) {
 	this.setRule(parseInt(this.state.ruleText));
