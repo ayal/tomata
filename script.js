@@ -1,6 +1,10 @@
 // calcs
 var _ = require('lodash');
 
+function mod(n, m) {
+    return ((n % m) + m) % m;
+}
+
 var k = 1;
 var cols = 3;
 var rules = Math.pow(2,Math.pow(2,cols));
@@ -15,9 +19,21 @@ import { Router, Route, Link, History, Lifecycle } from 'react-router';
 
 const Toma = React.createClass({
     getInitialState: function() {
-        return {firstrow:this.props.rrow(), secondrow: this.props.rrow(), scale: this.props.scale, y:this.props.y};
+	var srow = this.props.rrow();
+//	srow[299] = srow[301] = 1;
+        return {firstrow: this.props.rrow(), secondrow: srow, scale: this.props.scale, y:this.props.y};
     },
     componentDidMount: function() {
+/*	var dr1 = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+	var dr2 = [1,1,1,1,1,0,1,0,1,1,0,0,0,1,1,0,1,0,0,0,1,0,0,0];
+	dr1 = _.groupBy(dr1,function(x,i){return Math.floor(i/3)})
+	dr2 = _.groupBy(dr2,function(x,i){return Math.floor(i/3)})
+	var that = this;
+	_.each(dr1, function(v,k) {
+	    console.log([0,1,0],dr2[k],'>',that.calcnext([0,1,0],dr2[k]));
+	}) */
+//	console.log(this.calcnext(dr2,dr2));
+
 	this.context = this.refs.canvas.getContext('2d');
 	this.paint();
     },
@@ -62,13 +78,19 @@ const Toma = React.createClass({
 	var brule = this.props.rule.toString(2).split('').reverse().join('');
 	for (var j = 0; j < times; j++) {
 	    for (var i = 0; i < row2.length; i++) {
-		var num = parseInt('' + row2[i % row2.length] + row2[(i+1) % row2.length] + row2[(i+2) % row2.length], 2);
+		var num = parseInt('' + row2[mod((i - 1), row2.length)] + row2[(i) % row2.length] + row2[(i+1) % row2.length], 2);
 		var np = parseInt(brule[num] || '0')
+		
+/*		if (i === 1) {
+		    console.log('brule', brule, 'i',i, '' + row2[mod((i - 1), row2.length)] + row2[(i) % row2.length] + row2[(i+1) % row2.length], '===', num, brule + '[' + num + ']', np)
+		}*/
+
+		
 		if (np === 1) {
-		    next[i+1] = (row1[i+1] === 0 ? 1 : 0);
+		    next[(i) % row2.length] = (row1[(i) % row2.length] === 0 ? 1 : 0);
 		}
 		else {
-		    next[i+1] = row1[i+1];
+		    next[(i) % row2.length] = row1[(i) % row2.length];
 		}
 
 	    }
@@ -165,7 +187,8 @@ const App = React.createClass({
 	var row = [];
 	var seed = _.random(100);
 	for (var i = 0; i < w; i++) {
-		row.push(_.random(seed));
+	    row.push(_.random(seed))
+	    
 	}
 	return row;
     },
