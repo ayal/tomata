@@ -65,7 +65,7 @@ const Toma = React.createClass({
 		var num = parseInt('' + row2[i % row2.length] + row2[(i+1) % row2.length] + row2[(i+2) % row2.length], 2);
 		var np = parseInt(brule[num] || '0')
 		if (np === 1) {
-		    next[i+1] = row1[i+1] === 0 ? 1 : 0;
+		    next[i+1] = (row1[i+1] === 0 ? 1 : 0);
 		}
 		else {
 		    next[i+1] = row1[i+1];
@@ -163,8 +163,9 @@ const App = React.createClass({
     },
     rrow:function() {
 	var row = [];
+	var seed = _.random(100);
 	for (var i = 0; i < w; i++) {
-		row.push(_.random(1000));
+		row.push(_.random(seed));
 	}
 	return row;
     },
