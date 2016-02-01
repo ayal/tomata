@@ -147,7 +147,7 @@ const Toma = React.createClass({
 	    this.context.fillRect(i*this.state.scale, y*this.state.scale, this.state.scale, this.state.scale);
 	}
     },
-    calcnext: function(row1, row2, times) {
+    calcnext: function(row1, row2, times, brule) {
 	var key = '' + row1 + row2 + this.props.rule;
 	if (cache[key]) {
 	    return cache[key];
@@ -155,7 +155,7 @@ const Toma = React.createClass({
 	
 	var next = [];
 	times = times || 1;
-	var brule = this.props.rule.toString(2).split('').reverse().join('');
+
 	for (var j = 0; j < times; j++) {
 	    for (var i = 0; i < row2.length; i++) {
 		var num = parseInt('' + row2[mod((i - 1), row2.length)] + row2[(i) % row2.length] + row2[(i+1) % row2.length], 2);
@@ -165,7 +165,6 @@ const Toma = React.createClass({
 		    console.log('brule', brule, 'i',i, '' + row2[mod((i - 1), row2.length)] + row2[(i) % row2.length] + row2[(i+1) % row2.length], '===', num, brule + '[' + num + ']', np)
 		}*/
 
-		
 		if (np === 1) {
 		    next[(i) % row2.length] = (row1[(i) % row2.length] === 0 ? 1 : 0);
 		}
@@ -174,6 +173,7 @@ const Toma = React.createClass({
 		}
 
 	    }
+
 	    row2 = next;
 	    
 	    next = [];
@@ -183,17 +183,19 @@ const Toma = React.createClass({
 	return row2;
     },
     paint: function(cy) {
+	console.time('paint');
 	var row1 = this.state.firstrow;
 	var row2 = this.state.secondrow;
- 
+	var brule = this.props.rule.toString(2).split('').reverse().join('');
 	for (var y = 0; y < this.props.h; y++) {
 	    this.drawrow(row1,y);
-	    this.drawrow(row2,y+1);
+//	    this.drawrow(row2,y+1);
 	    
 	    var trow2 = row2;
-	    row2 = this.calcnext(row1, row2);
+	    row2 = this.calcnext(row1, row2,1,brule);
 	    row1 = trow2;
 	}
+	console.timeEnd('paint');
     },
     paintCursor: function(cx, cy) {
 	var that = this;
