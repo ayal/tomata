@@ -54,7 +54,7 @@
 /******/ 	
 /******/ 	
 /******/ 	var hotApplyOnUpdate = true;
-/******/ 	var hotCurrentHash = "bc748b3c010b171f03ec"; // eslint-disable-line no-unused-vars
+/******/ 	var hotCurrentHash = "aa2813e8d0c5ccfd4f00"; // eslint-disable-line no-unused-vars
 /******/ 	var hotCurrentModuleData = {};
 /******/ 	var hotCurrentParents = []; // eslint-disable-line no-unused-vars
 /******/ 	
@@ -555,7 +555,7 @@
 /* 1 */
 /***/ function(module, exports, __webpack_require__) {
 
-	'use strict';
+	"use strict";
 
 	var _react = __webpack_require__(2);
 
@@ -578,6 +578,8 @@
 				return (n % m + m) % m;
 	}
 
+	var brew = ["#fff7f3", "#fde0dd", "#fcc5c0", "#fa9fb5", "#f768a1", "#dd3497", "#ae017e", "#7a0177", "#49006a"];
+
 	var k = 1;
 	var cols = 3;
 	var rules = Math.pow(2, Math.pow(2, cols));
@@ -596,7 +598,7 @@
 	});
 
 	var Cursor = _react2.default.createClass({
-				displayName: 'Cursor',
+				displayName: "Cursor",
 
 				getInitialState: function getInitialState() {
 							var that = this;
@@ -620,19 +622,19 @@
 				render: function render() {
 							var bits = [];
 							for (var j = 0; j < 2; j++) {
-										bits.push(_react2.default.createElement('div', null));
+										bits.push(_react2.default.createElement("div", null));
 										for (var i = 0; i < 8; i++) {
 													var row = j === 0 ? this.props.frow : this.props.srow;
 
 													if (row) {
 																var cls = row[this.state.cx + i] === 1 ? 'on' : 'off';
-																bits.push(_react2.default.createElement('div', { className: "bit " + cls, 'data-i': i, 'data-j': j, onClick: this.clickbit(i, j) }));
+																bits.push(_react2.default.createElement("div", { className: "bit " + cls, "data-i": i, "data-j": j, onClick: this.clickbit(i, j) }));
 													}
 										}
 							}
 							return _react2.default.createElement(
-										'div',
-										{ className: 'cursor' },
+										"div",
+										{ className: "cursor" },
 										bits
 							);
 				}
@@ -641,7 +643,7 @@
 	var cache = {};
 
 	var Toma = _react2.default.createClass({
-				displayName: 'Toma',
+				displayName: "Toma",
 
 				getInitialState: function getInitialState() {
 							var srow = this.props.rrow();
@@ -694,10 +696,10 @@
 							}
 							this.setState({ firstrow: frow, secondrow: srow });
 				},
-				drawrow: function drawrow(row, y) {
+				drawrow: function drawrow(row, y, prow) {
 							for (var i = 0; i < row.length; i++) {
 										if (row[i] === 1) {
-													this.context.fillStyle = "pink";
+													this.context.fillStyle = brew[row[i + 1] + row[i - 1] + prow[i + 1] + prow[i - 1] + prow[i]];
 										} else {
 													this.context.fillStyle = "white";
 										}
@@ -743,8 +745,8 @@
 							var row2 = this.state.secondrow;
 							var brule = this.props.rule.toString(2).split('').reverse().join('');
 							for (var y = 0; y < this.props.h; y++) {
-										this.drawrow(row1, y);
-										//	    this.drawrow(row2,y+1);
+										//	    this.drawrow(row1,y);
+										this.drawrow(row2, y + 1, row1);
 
 										var trow2 = row2;
 										row2 = this.calcnext(row1, row2, 1, brule);
@@ -797,51 +799,51 @@
 				render: function render() {
 							console.log('rendering toma');
 							return _react2.default.createElement(
-										'div',
+										"div",
 										null,
 										_react2.default.createElement(
-													'div',
+													"div",
 													null,
 													_react2.default.createElement(
-																'button',
+																"button",
 																{ onClick: this.rrow },
-																'random row'
+																"random row"
 													),
 													_react2.default.createElement(
-																'div',
+																"div",
 																null,
 																_react2.default.createElement(
-																			'button',
+																			"button",
 																			{ onClick: this.scaleup },
-																			'+'
+																			"+"
 																),
 																_react2.default.createElement(
-																			'span',
+																			"span",
 																			null,
-																			'scale: ',
+																			"scale: ",
 																			this.state.scale
 																),
 																_react2.default.createElement(
-																			'button',
+																			"button",
 																			{ onClick: this.scaledown },
-																			'-'
+																			"-"
 																),
 																_react2.default.createElement(
-																			'button',
+																			"button",
 																			{ onClick: this.goup },
-																			'scroll'
+																			"scroll"
 																),
 																_react2.default.createElement(
-																			'a',
+																			"a",
 																			{ onClick: this.download },
-																			'download'
+																			"download"
 																)
 													)
 										),
 										_react2.default.createElement(
-													'div',
+													"div",
 													null,
-													_react2.default.createElement('canvas', { ref: 'canvas', width: this.props.w * this.state.scale, height: this.props.h * this.state.scale })
+													_react2.default.createElement("canvas", { ref: "canvas", width: this.props.w * this.state.scale, height: this.props.h * this.state.scale })
 										),
 										_react2.default.createElement(Cursor, { paint: this.paintCursor, setBit: this.setBit, frow: this.state.firstrow, srow: this.state.secondrow })
 							);
@@ -851,7 +853,7 @@
 	var w = 300;
 
 	var App = _react2.default.createClass({
-				displayName: 'App',
+				displayName: "App",
 
 				mixins: [_reactRouter.Lifecycle, _reactRouter.History],
 				getInitialState: function getInitialState() {
@@ -884,18 +886,18 @@
 							var rule = this.props.location.query.rule ? parseInt(this.props.location.query.rule) : _.random(rules);
 							console.log('rendering app', rule);
 							return _react2.default.createElement(
-										'div',
+										"div",
 										null,
-										_react2.default.createElement('input', { ref: 'rule', value: this.state.ruleText, onChange: this.changeRuleText }),
+										_react2.default.createElement("input", { ref: "rule", value: this.state.ruleText, onChange: this.changeRuleText }),
 										_react2.default.createElement(
-													'button',
+													"button",
 													{ onClick: this.setRuleByText },
-													'go'
+													"go"
 										),
 										_react2.default.createElement(
-													'button',
+													"button",
 													{ onClick: this.rrule },
-													'random rule'
+													"random rule"
 										),
 										_react2.default.createElement(Toma, { w: w, scale: 1, rule: rule, rrow: this.rrow, h: 500, y: 0 })
 							);
@@ -905,8 +907,8 @@
 	(0, _reactDom.render)(_react2.default.createElement(
 				_reactRouter.Router,
 				{ history: (0, _createBrowserHistory2.default)() },
-				_react2.default.createElement(_reactRouter.Route, { path: '/', component: App }),
-				_react2.default.createElement(_reactRouter.Route, { path: '/tomata/', component: App })
+				_react2.default.createElement(_reactRouter.Route, { path: "/", component: App }),
+				_react2.default.createElement(_reactRouter.Route, { path: "/tomata/", component: App })
 	), document.getElementById('root'));
 
 /***/ },

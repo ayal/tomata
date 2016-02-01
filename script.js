@@ -5,6 +5,8 @@ function mod(n, m) {
     return ((n % m) + m) % m;
 }
 
+var brew = ["#fff7f3","#fde0dd","#fcc5c0","#fa9fb5","#f768a1","#dd3497","#ae017e","#7a0177","#49006a"];
+
 var k = 1;
 var cols = 3;
 var rules = Math.pow(2,Math.pow(2,cols));
@@ -136,10 +138,10 @@ const Toma = React.createClass({
 	}
 	this.setState({firstrow:frow,secondrow:srow})
     },
-    drawrow: function(row,y) {
+    drawrow: function(row,y,prow) {
 	for (var i = 0; i < row.length; i++) {
 	    if (row[i] === 1) {
-		this.context.fillStyle="pink";
+		this.context.fillStyle = brew[row[i+1] + row[i-1] + prow[i+1] + prow[i-1] + prow[i]];
 	    }
 	    else {
 		this.context.fillStyle="white";
@@ -188,8 +190,8 @@ const Toma = React.createClass({
 	var row2 = this.state.secondrow;
 	var brule = this.props.rule.toString(2).split('').reverse().join('');
 	for (var y = 0; y < this.props.h; y++) {
-	    this.drawrow(row1,y);
-//	    this.drawrow(row2,y+1);
+//	    this.drawrow(row1,y);
+	    this.drawrow(row2,y+1,row1);
 	    
 	    var trow2 = row2;
 	    row2 = this.calcnext(row1, row2,1,brule);
