@@ -16,11 +16,72 @@ import { render } from 'react-dom'
 
 import { Router, Route, Link, History, Lifecycle } from 'react-router';
 
+document.addEventListener('keydown', function (e) {
+    console.log(e.which)
+    if (e.which === 40) {
+	window.moveCursor(0,1);
+    }
+    else if (e.which === 38) {
+	window.moveCursor(0,-1);
+    }
+    else if (e.which === 39) {
+	window.moveCursor(1,0);
+    }
+    else if (e.which === 37) {
+	window.moveCursor(-1,0);
+    }
+    else {
+	console.log(e.which)
+    }
+
+});
+
+const Cursor = React.createClass({
+    getInitialState: function() {
+	var that = this;
+	window.moveCursor = function(dx,dy) {
+	    that.setState({cx: that.state.cx + dx, cy: that.state.cy + dy})
+	}
+        return {cx:w / 2,cy:0,states:{}};
+    },
+    componentDidMount: function() {
+	this.props.paint();
+    },
+    componentDidUpdate: function() {
+	this.props.paint(this.state.cx, this.state.cy);
+    },
+    clickbit: function(i,j) {
+	var that = this;
+	return function() {
+	    that.state.states[i+'_'+j] = (!that.state.states[i+'_'+j]) ? 1 : 0;
+	    that.forceUpdate();
+	    that.props.setBit(that.state.cx + i, that.state.cy + j, that.state.states[i+'_'+j]);
+	}
+    },
+    render: function() {
+	var bits = [];
+	for (var j = 0; j < 2; j++) {
+	    bits.push(<div></div>)
+	    for (var i = 0; i < 8; i++) {
+		var cls = this.state.states[i+'_'+j] === 1 ? 'on' :'off';
+		bits.push(<div className={"bit " + cls} data-i={i} data-j={j} onClick={this.clickbit(i,j)}></div>)
+	    }
+	}
+	return (
+	    <div className="cursor">
+	    {bits}
+	    </div>
+	);
+    }
+});
+
+var cache = {};
 
 const Toma = React.createClass({
     getInitialState: function() {
 	var srow = this.props.rrow();
-//	srow[299] = srow[301] = 1;
+	//	srow[299] = srow[301] = 1;
+	var that = this;
         return {firstrow: this.props.rrow(), secondrow: srow, scale: this.props.scale, y:this.props.y};
     },
     componentDidMount: function() {
@@ -38,6 +99,7 @@ const Toma = React.createClass({
 	this.paint();
     },
     shouldComponentUpdate: function(pprops, pstate) {
+
 	if (pprops.w !== this.props.w ||
 	    pprops.h !== this.props.h ||
 	    pprops.rule !== this.props.rule ||
@@ -46,33 +108,58 @@ const Toma = React.createClass({
 	    console.log('props changed, updating...')
 	    return true;
 	}
-	else if (pstate.firstrow.join() !== this.state.firstrow.join() ||
+
+
+	if (pstate.firstrow.join() !== this.state.firstrow.join() ||
 	    pstate.secondrow.join() !== this.state.secondrow.join() ||
 	    pstate.y !== this.state.y ||
-	    pstate.scale !== this.state.scale) {
-	    console.log('state changed, updating...')
-	    return true;
-	}
-	else {
-	    console.log('not updating...')
-	    return false;
-	}
+	    pstate.scale !== this.state.scale)
+	    {
+		console.log('state changed, updating...')
+		return true;
+	    }
+	
+	
+	console.log('not updating...')
+	return false;
+	
     },
     componentDidUpdate: function() {
 
 	this.context = this.refs.canvas.getContext('2d');
 	this.context.clearRect(0, 0, this.props.w * this.state.scale, this.props.h * this.state.scale);
+	console.log('cleared');
 	this.paint();
+    },
+    setBit: function(x,y,bit) {
+	console.log('setbit',x,y,bit)
+	var frow = _.clone(this.state.firstrow);
+	var srow = _.clone(this.state.secondrow);
+	if (y === 0) {
+	    frow[x] = bit;
+	}
+	else {
+	    srow[x] = bit;
+	}
+	this.setState({firstrow:frow,secondrow:srow})
     },
     drawrow: function(row,y) {
 	for (var i = 0; i < row.length; i++) {
 	    if (row[i] === 1) {
 		this.context.fillStyle="pink";
-		this.context.fillRect(i*this.state.scale, y*this.state.scale, this.state.scale, this.state.scale);
 	    }
+	    else {
+		this.context.fillStyle="white";
+	    }
+	    this.context.fillRect(i*this.state.scale, y*this.state.scale, this.state.scale, this.state.scale);
 	}
     },
     calcnext: function(row1, row2, times) {
+	var key = '' + row1 + row2 + this.props.rule;
+	if (cache[key]) {
+	    return cache[key];
+	}
+	
 	var next = [];
 	times = times || 1;
 	var brule = this.props.rule.toString(2).split('').reverse().join('');
@@ -99,24 +186,36 @@ const Toma = React.createClass({
 	    next = [];
 	}
 
+	cache[key] = row2;
 	return row2;
     },
-    paint: function(context) {
-	
+    paint: function(cy) {
 	var row1 = this.state.firstrow;
 	var row2 = this.state.secondrow;
-	
-	this.context.save();
+ 
 	for (var y = 0; y < this.props.h; y++) {
-	    this.drawrow(row1,y);
-	    this.drawrow(row2,y+1);
+	    if (cy === undefined || y === cy) {
+		this.drawrow(row1,y);
+		this.drawrow(row2,y+1);
+	    }
+	    
 	    var trow2 = row2;
 	    row2 = this.calcnext(row1, row2);
-
 	    row1 = trow2;
 	}
-	this.context.restore();
     },
+    paintCursor: function(cx, cy) {
+	if (this.context.fillStyle) {
+	    console.log('cursor', this.context, cy);
+	    this.paint(cy-1)
+	    this.paint(cy)
+	    this.paint(cy+1)
+	    this.context.fillStyle = "rgba(0,0,0,0.1)";
+	    this.context.fillRect(cx*this.state.scale, cy*this.state.scale, 8*this.state.scale, 2*this.state.scale);
+	}
+
+    },
+
     rrow: function() {
 	this.setState({firstrow: this.props.rrow(), secondrow: this.props.rrow()})
     },
@@ -156,7 +255,7 @@ const Toma = React.createClass({
 	    <div>
 	    <canvas ref="canvas" width={this.props.w*this.state.scale} height={this.props.h*this.state.scale} />
 	    </div>
-	    
+	    <Cursor paint={this.paintCursor} setBit={this.setBit}/>
 	    </div>
 		
 	)
@@ -185,10 +284,8 @@ const App = React.createClass({
     },
     rrow:function() {
 	var row = [];
-	var seed = _.random(100);
 	for (var i = 0; i < w; i++) {
-	    row.push(_.random(seed))
-	    
+	    row.push(0)
 	}
 	return row;
     },
