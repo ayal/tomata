@@ -17,14 +17,7 @@ import { render } from 'react-dom'
 import { Router, Route, Link, History, Lifecycle } from 'react-router';
 
 document.addEventListener('keydown', function (e) {
-    console.log(e.which)
-    if (e.which === 40) {
-	window.moveCursor(0,1);
-    }
-    else if (e.which === 38) {
-	window.moveCursor(0,-1);
-    }
-    else if (e.which === 39) {
+    if (e.which === 39) {
 	window.moveCursor(1,0);
     }
     else if (e.which === 37) {
@@ -42,7 +35,7 @@ const Cursor = React.createClass({
 	window.moveCursor = function(dx,dy) {
 	    that.setState({cx: that.state.cx + dx, cy: that.state.cy + dy})
 	}
-        return {cx:w / 2,cy:0,states:{}};
+        return {cx:w / 2,cy:0};
     },
     componentDidMount: function() {
 	this.props.paint();
@@ -53,9 +46,7 @@ const Cursor = React.createClass({
     clickbit: function(i,j) {
 	var that = this;
 	return function() {
-	    that.state.states[i+'_'+j] = (!that.state.states[i+'_'+j]) ? 1 : 0;
-	    that.forceUpdate();
-	    that.props.setBit(that.state.cx + i, that.state.cy + j, that.state.states[i+'_'+j]);
+	    that.props.setBit(that.state.cx + i, that.state.cy + j);
 	}
     },
     render: function() {
@@ -63,8 +54,12 @@ const Cursor = React.createClass({
 	for (var j = 0; j < 2; j++) {
 	    bits.push(<div></div>)
 	    for (var i = 0; i < 8; i++) {
-		var cls = this.state.states[i+'_'+j] === 1 ? 'on' :'off';
-		bits.push(<div className={"bit " + cls} data-i={i} data-j={j} onClick={this.clickbit(i,j)}></div>)
+		var row = (j === 0 ? this.props.frow : this.props.srow);
+		
+		if (row) {
+		var cls = row[this.state.cx + i] === 1 ? 'on' :'off';
+		    bits.push(<div className={"bit " + cls} data-i={i} data-j={j} onClick={this.clickbit(i,j)}></div>)
+		}
 	    }
 	}
 	return (
@@ -99,7 +94,6 @@ const Toma = React.createClass({
 	this.paint();
     },
     shouldComponentUpdate: function(pprops, pstate) {
-
 	if (pprops.w !== this.props.w ||
 	    pprops.h !== this.props.h ||
 	    pprops.rule !== this.props.rule ||
@@ -125,21 +119,20 @@ const Toma = React.createClass({
 	
     },
     componentDidUpdate: function() {
-
 	this.context = this.refs.canvas.getContext('2d');
 	this.context.clearRect(0, 0, this.props.w * this.state.scale, this.props.h * this.state.scale);
 	console.log('cleared');
 	this.paint();
     },
-    setBit: function(x,y,bit) {
-	console.log('setbit',x,y,bit)
+    setBit: function(x,y) {
+	console.log('setbit',x,y)
 	var frow = _.clone(this.state.firstrow);
 	var srow = _.clone(this.state.secondrow);
 	if (y === 0) {
-	    frow[x] = bit;
+	    frow[x] = (frow[x] === 1 ? 0 : 1);
 	}
 	else {
-	    srow[x] = bit;
+	    srow[x] = (srow[x] === 1 ? 0 : 1);
 	}
 	this.setState({firstrow:frow,secondrow:srow})
     },
@@ -194,10 +187,8 @@ const Toma = React.createClass({
 	var row2 = this.state.secondrow;
  
 	for (var y = 0; y < this.props.h; y++) {
-	    if (cy === undefined || y === cy) {
-		this.drawrow(row1,y);
-		this.drawrow(row2,y+1);
-	    }
+	    this.drawrow(row1,y);
+	    this.drawrow(row2,y+1);
 	    
 	    var trow2 = row2;
 	    row2 = this.calcnext(row1, row2);
@@ -205,11 +196,26 @@ const Toma = React.createClass({
 	}
     },
     paintCursor: function(cx, cy) {
+	var that = this;
 	if (this.context.fillStyle) {
 	    console.log('cursor', this.context, cy);
-	    this.paint(cy-1)
-	    this.paint(cy)
-	    this.paint(cy+1)
+
+	     for (var j = 0; j < 2; j++) {
+		for (var i = -1; i < 9; i++) {
+		    var row = (j === 0 ? that.state.firstrow : that.state.secondrow);
+		    if (row) {
+			if (row[cx + i] === 1) {
+			    that.context.fillStyle="pink";
+			}
+			else {
+			    that.context.fillStyle="white";
+			}
+			that.context.fillRect((cx+i)*that.state.scale, (cy+j)*that.state.scale, that.state.scale, that.state.scale);
+		    }
+		}
+	     }
+
+	    
 	    this.context.fillStyle = "rgba(0,0,0,0.1)";
 	    this.context.fillRect(cx*this.state.scale, cy*this.state.scale, 8*this.state.scale, 2*this.state.scale);
 	}
@@ -255,14 +261,14 @@ const Toma = React.createClass({
 	    <div>
 	    <canvas ref="canvas" width={this.props.w*this.state.scale} height={this.props.h*this.state.scale} />
 	    </div>
-	    <Cursor paint={this.paintCursor} setBit={this.setBit}/>
+	    <Cursor paint={this.paintCursor} setBit={this.setBit} frow={this.state.firstrow} srow={this.state.secondrow}/>
 	    </div>
 		
 	)
     }
 });
 
-var w = 600;
+var w = 300;
 
 const App = React.createClass({
     mixins: [ Lifecycle, History ],

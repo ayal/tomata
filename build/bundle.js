@@ -54,7 +54,7 @@
 /******/ 	
 /******/ 	
 /******/ 	var hotApplyOnUpdate = true;
-/******/ 	var hotCurrentHash = "34da9238d734eb1d37e3"; // eslint-disable-line no-unused-vars
+/******/ 	var hotCurrentHash = "0cfc61458fe2a7f9f969"; // eslint-disable-line no-unused-vars
 /******/ 	var hotCurrentModuleData = {};
 /******/ 	var hotCurrentParents = []; // eslint-disable-line no-unused-vars
 /******/ 	
@@ -586,12 +586,7 @@
 	__webpack_require__(210);
 
 	document.addEventListener('keydown', function (e) {
-				console.log(e.which);
-				if (e.which === 40) {
-							window.moveCursor(0, 1);
-				} else if (e.which === 38) {
-							window.moveCursor(0, -1);
-				} else if (e.which === 39) {
+				if (e.which === 39) {
 							window.moveCursor(1, 0);
 				} else if (e.which === 37) {
 							window.moveCursor(-1, 0);
@@ -608,7 +603,7 @@
 							window.moveCursor = function (dx, dy) {
 										that.setState({ cx: that.state.cx + dx, cy: that.state.cy + dy });
 							};
-							return { cx: w / 2, cy: 0, states: {} };
+							return { cx: w / 2, cy: 0 };
 				},
 				componentDidMount: function componentDidMount() {
 							this.props.paint();
@@ -619,9 +614,7 @@
 				clickbit: function clickbit(i, j) {
 							var that = this;
 							return function () {
-										that.state.states[i + '_' + j] = !that.state.states[i + '_' + j] ? 1 : 0;
-										that.forceUpdate();
-										that.props.setBit(that.state.cx + i, that.state.cy + j, that.state.states[i + '_' + j]);
+										that.props.setBit(that.state.cx + i, that.state.cy + j);
 							};
 				},
 				render: function render() {
@@ -629,8 +622,12 @@
 							for (var j = 0; j < 2; j++) {
 										bits.push(_react2.default.createElement('div', null));
 										for (var i = 0; i < 8; i++) {
-													var cls = this.state.states[i + '_' + j] === 1 ? 'on' : 'off';
-													bits.push(_react2.default.createElement('div', { className: "bit " + cls, 'data-i': i, 'data-j': j, onClick: this.clickbit(i, j) }));
+													var row = j === 0 ? this.props.frow : this.props.srow;
+
+													if (row) {
+																var cls = row[this.state.cx + i] === 1 ? 'on' : 'off';
+																bits.push(_react2.default.createElement('div', { className: "bit " + cls, 'data-i': i, 'data-j': j, onClick: this.clickbit(i, j) }));
+													}
 										}
 							}
 							return _react2.default.createElement(
@@ -667,7 +664,6 @@
 							this.paint();
 				},
 				shouldComponentUpdate: function shouldComponentUpdate(pprops, pstate) {
-
 							if (pprops.w !== this.props.w || pprops.h !== this.props.h || pprops.rule !== this.props.rule || pprops.y !== this.props.y || pprops.scale !== this.props.scale) {
 										console.log('props changed, updating...');
 										return true;
@@ -682,20 +678,19 @@
 							return false;
 				},
 				componentDidUpdate: function componentDidUpdate() {
-
 							this.context = this.refs.canvas.getContext('2d');
 							this.context.clearRect(0, 0, this.props.w * this.state.scale, this.props.h * this.state.scale);
 							console.log('cleared');
 							this.paint();
 				},
-				setBit: function setBit(x, y, bit) {
-							console.log('setbit', x, y, bit);
+				setBit: function setBit(x, y) {
+							console.log('setbit', x, y);
 							var frow = _.clone(this.state.firstrow);
 							var srow = _.clone(this.state.secondrow);
 							if (y === 0) {
-										frow[x] = bit;
+										frow[x] = frow[x] === 1 ? 0 : 1;
 							} else {
-										srow[x] = bit;
+										srow[x] = srow[x] === 1 ? 0 : 1;
 							}
 							this.setState({ firstrow: frow, secondrow: srow });
 				},
@@ -746,10 +741,8 @@
 							var row2 = this.state.secondrow;
 
 							for (var y = 0; y < this.props.h; y++) {
-										if (cy === undefined || y === cy) {
-													this.drawrow(row1, y);
-													this.drawrow(row2, y + 1);
-										}
+										this.drawrow(row1, y);
+										this.drawrow(row2, y + 1);
 
 										var trow2 = row2;
 										row2 = this.calcnext(row1, row2);
@@ -757,11 +750,24 @@
 							}
 				},
 				paintCursor: function paintCursor(cx, cy) {
+							var that = this;
 							if (this.context.fillStyle) {
 										console.log('cursor', this.context, cy);
-										this.paint(cy - 1);
-										this.paint(cy);
-										this.paint(cy + 1);
+
+										for (var j = 0; j < 2; j++) {
+													for (var i = -1; i < 9; i++) {
+																var row = j === 0 ? that.state.firstrow : that.state.secondrow;
+																if (row) {
+																			if (row[cx + i] === 1) {
+																						that.context.fillStyle = "pink";
+																			} else {
+																						that.context.fillStyle = "white";
+																			}
+																			that.context.fillRect((cx + i) * that.state.scale, (cy + j) * that.state.scale, that.state.scale, that.state.scale);
+																}
+													}
+										}
+
 										this.context.fillStyle = "rgba(0,0,0,0.1)";
 										this.context.fillRect(cx * this.state.scale, cy * this.state.scale, 8 * this.state.scale, 2 * this.state.scale);
 							}
@@ -834,12 +840,12 @@
 													null,
 													_react2.default.createElement('canvas', { ref: 'canvas', width: this.props.w * this.state.scale, height: this.props.h * this.state.scale })
 										),
-										_react2.default.createElement(Cursor, { paint: this.paintCursor, setBit: this.setBit })
+										_react2.default.createElement(Cursor, { paint: this.paintCursor, setBit: this.setBit, frow: this.state.firstrow, srow: this.state.secondrow })
 							);
 				}
 	});
 
-	var w = 600;
+	var w = 300;
 
 	var App = _react2.default.createClass({
 				displayName: 'App',
