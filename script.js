@@ -5,7 +5,7 @@ function mod(n, m) {
     return ((n % m) + m) % m;
 }
 
-var brew = ["#fff7f3","#fde0dd","#fcc5c0","#fa9fb5","#f768a1","#dd3497","#ae017e","#7a0177","#49006a"];
+var brew = ["#f7f4f9","#e7e1ef","#d4b9da","#c994c7","#df65b0","#e7298a","#ce1256","#980043","#67001f"]
 
 var k = 1;
 var cols = 3;
@@ -76,10 +76,10 @@ var cache = {};
 
 const Toma = React.createClass({
     getInitialState: function() {
-	var srow = this.props.rrow();
+	var srow = this.props.emptyrow();
 	//	srow[299] = srow[301] = 1;
 	var that = this;
-        return {firstrow: this.props.rrow(), secondrow: srow, scale: this.props.scale, y:this.props.y};
+        return {firstrow: this.props.emptyrow(), secondrow: srow, scale: this.props.scale, y:this.props.y};
     },
     componentDidMount: function() {
 /*	var dr1 = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
@@ -138,46 +138,53 @@ const Toma = React.createClass({
 	}
 	this.setState({firstrow:frow,secondrow:srow})
     },
+    getColor: function(row,prow,i) {
+	if (row[i] === 1) {
+	    return brew[row[i+1] + row[i-1] + prow[i+1] + prow[i-1] + prow[i]];
+	}
+	else {
+	    return brew[0];
+	}
+    },
     drawrow: function(row,y,prow) {
 	for (var i = 0; i < row.length; i++) {
-	    if (row[i] === 1) {
-		this.context.fillStyle = brew[row[i+1] + row[i-1] + prow[i+1] + prow[i-1] + prow[i]];
-	    }
-	    else {
-		this.context.fillStyle="white";
-	    }
+	    this.context.fillStyle = this.getColor(row,prow,i);
 	    this.context.fillRect(i*this.state.scale, y*this.state.scale, this.state.scale, this.state.scale);
 	}
     },
-    calcnext: function(row1, row2, times, brule) {
-	var key = '' + row1 + row2 + this.props.rule;
-	if (cache[key]) {
-	    return cache[key];
-	}
-	
+    calcnext: function(row1, row2, times, brule) {	
 	var next = [];
 	times = times || 1;
 
+	/*
+
+*/
 	for (var j = 0; j < times; j++) {
-	    for (var i = 0; i < row2.length; i++) {
-		var num = parseInt('' + row2[mod((i - 1), row2.length)] + row2[(i) % row2.length] + row2[(i+1) % row2.length], 2);
-		var np = parseInt(brule[num] || '0')
-		
-/*		if (i === 1) {
-		    console.log('brule', brule, 'i',i, '' + row2[mod((i - 1), row2.length)] + row2[(i) % row2.length] + row2[(i+1) % row2.length], '===', num, brule + '[' + num + ']', np)
-		}*/
+	    var key = '' + row1 + row2 + '_' + this.props.rule;
 
-		if (np === 1) {
-		    next[(i) % row2.length] = (row1[(i) % row2.length] === 0 ? 1 : 0);
-		}
-		else {
-		    next[(i) % row2.length] = row1[(i) % row2.length];
-		}
-
+	    if (cache[key]) {
+		next =  cache[key];
 	    }
+	    else {
+		for (var i = 0; i < row2.length; i++) {
+		    var num = parseInt('' + row2[mod((i - 1), row2.length)] + row2[(i) % row2.length] + row2[(i+1) % row2.length], 2);
+		    var np = parseInt(brule[num] || '0')
+		    
+		    /*		if (i === 1) {
+		      console.log('brule', brule, 'i',i, '' + row2[mod((i - 1), row2.length)] + row2[(i) % row2.length] + row2[(i+1) % row2.length], '===', num, brule + '[' + num + ']', np)
+		      }*/
 
+		    if (np === 1) {
+			next[(i) % row2.length] = (row1[(i) % row2.length] === 0 ? 1 : 0);
+		    }
+		    else {
+			next[(i) % row2.length] = row1[(i) % row2.length];
+		    }
+
+		}
+	    }
+	    row1 = row2;
 	    row2 = next;
-	    
 	    next = [];
 	}
 
@@ -208,12 +215,7 @@ const Toma = React.createClass({
 		for (var i = -1; i < 9; i++) {
 		    var row = (j === 0 ? that.state.firstrow : that.state.secondrow);
 		    if (row) {
-			if (row[cx + i] === 1) {
-			    that.context.fillStyle="pink";
-			}
-			else {
-			    that.context.fillStyle="white";
-			}
+			that.context.fillStyle=that.getColor(that.state.secondrow, that.state.firstrow, cx + i);
 			that.context.fillRect((cx+i)*that.state.scale, (cy+j)*that.state.scale, that.state.scale, that.state.scale);
 		    }
 		}
@@ -226,8 +228,8 @@ const Toma = React.createClass({
 
     },
 
-    rrow: function() {
-	this.setState({firstrow: this.props.rrow(), secondrow: this.props.rrow()})
+    emptyrow: function() {
+	this.setState({firstrow: this.props.emptyrow(), secondrow: this.props.emptyrow()})
     },
     scaleup: function() {
 	this.setState({scale: this.state.scale + 1})
@@ -236,9 +238,10 @@ const Toma = React.createClass({
 	this.setState({scale: this.state.scale - 1})
     },
     goup: function() {
-/*	var next10 = this.calcnext(this.state.firstrow, this.state.secondrow, 10);
-	var next11 = this.calcnext(this.state.firstrow, next10, 10);
-	this.setState({firstrow: next10}) */
+	var brule = this.props.rule.toString(2).split('').reverse().join('');
+	var next10 = this.calcnext(this.state.firstrow, this.state.secondrow, 20,brule);
+	var next11 = this.calcnext(this.state.firstrow, this.state.secondrow, 21,brule);
+	this.setState({firstrow: next10, secondrow: next11})
     },
     download: function(e) {
 	e.target.href = this.refs.canvas.toDataURL('image/png');
@@ -250,7 +253,7 @@ const Toma = React.createClass({
 	return (
 	    <div>
 	    <div>
-	    <button onClick={this.rrow}>random row</button>
+	    <button onClick={this.emptyrow}>clear</button>
 	    
 	    <div>
 	    <button onClick={this.scaleup}>+</button>
@@ -279,6 +282,11 @@ const App = React.createClass({
     getInitialState: function() {
         return {ruleText:this.props.location.query.rule};
     },
+    componentDidMount: function() {
+	if (!this.props.location.query.rule) {
+	    this.setRule(233);
+	}
+    },
     routerWillLeave: function(nextLocation) {
         return null;
     },
@@ -292,7 +300,7 @@ const App = React.createClass({
 	var newrule = _.random(rules);
 	this.setRule(newrule)
     },
-    rrow:function() {
+    emptyrow:function() {
 	var row = [];
 	for (var i = 0; i < w; i++) {
 	    row.push(0)
@@ -303,14 +311,14 @@ const App = React.createClass({
 	this.setState({ruleText:e.target.value})
     },
     render: function() {
-	var rule = this.props.location.query.rule ? parseInt(this.props.location.query.rule) : _.random(rules);
+	var rule = parseInt(this.props.location.query.rule);
 	console.log('rendering app', rule)
 	return (
 	    <div>
 	    <input ref="rule" value={this.state.ruleText} onChange={this.changeRuleText} />
 	    <button onClick={this.setRuleByText}>go</button>
 	    <button onClick={this.rrule}>random rule</button>
-	    <Toma w={w} scale={1} rule={rule} rrow={this.rrow} h={500} y={0} />
+	    <Toma w={w} scale={1} rule={rule} emptyrow={this.emptyrow} h={500} y={0} />
 	    </div>
 	);
     }

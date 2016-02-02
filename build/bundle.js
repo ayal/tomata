@@ -54,7 +54,7 @@
 /******/ 	
 /******/ 	
 /******/ 	var hotApplyOnUpdate = true;
-/******/ 	var hotCurrentHash = "aa2813e8d0c5ccfd4f00"; // eslint-disable-line no-unused-vars
+/******/ 	var hotCurrentHash = "7e121d648aeb176c1f87"; // eslint-disable-line no-unused-vars
 /******/ 	var hotCurrentModuleData = {};
 /******/ 	var hotCurrentParents = []; // eslint-disable-line no-unused-vars
 /******/ 	
@@ -578,7 +578,7 @@
 				return (n % m + m) % m;
 	}
 
-	var brew = ["#fff7f3", "#fde0dd", "#fcc5c0", "#fa9fb5", "#f768a1", "#dd3497", "#ae017e", "#7a0177", "#49006a"];
+	var brew = ["#f7f4f9", "#e7e1ef", "#d4b9da", "#c994c7", "#df65b0", "#e7298a", "#ce1256", "#980043", "#67001f"];
 
 	var k = 1;
 	var cols = 3;
@@ -646,10 +646,10 @@
 				displayName: "Toma",
 
 				getInitialState: function getInitialState() {
-							var srow = this.props.rrow();
+							var srow = this.props.emptyrow();
 							//	srow[299] = srow[301] = 1;
 							var that = this;
-							return { firstrow: this.props.rrow(), secondrow: srow, scale: this.props.scale, y: this.props.y };
+							return { firstrow: this.props.emptyrow(), secondrow: srow, scale: this.props.scale, y: this.props.y };
 				},
 				componentDidMount: function componentDidMount() {
 							/*	var dr1 = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
@@ -696,43 +696,48 @@
 							}
 							this.setState({ firstrow: frow, secondrow: srow });
 				},
+				getColor: function getColor(row, prow, i) {
+							if (row[i] === 1) {
+										return brew[row[i + 1] + row[i - 1] + prow[i + 1] + prow[i - 1] + prow[i]];
+							} else {
+										return brew[0];
+							}
+				},
 				drawrow: function drawrow(row, y, prow) {
 							for (var i = 0; i < row.length; i++) {
-										if (row[i] === 1) {
-													this.context.fillStyle = brew[row[i + 1] + row[i - 1] + prow[i + 1] + prow[i - 1] + prow[i]];
-										} else {
-													this.context.fillStyle = "white";
-										}
+										this.context.fillStyle = this.getColor(row, prow, i);
 										this.context.fillRect(i * this.state.scale, y * this.state.scale, this.state.scale, this.state.scale);
 							}
 				},
 				calcnext: function calcnext(row1, row2, times, brule) {
-							var key = '' + row1 + row2 + this.props.rule;
-							if (cache[key]) {
-										return cache[key];
-							}
-
 							var next = [];
 							times = times || 1;
 
+							/*
+	      */
 							for (var j = 0; j < times; j++) {
-										for (var i = 0; i < row2.length; i++) {
-													var num = parseInt('' + row2[mod(i - 1, row2.length)] + row2[i % row2.length] + row2[(i + 1) % row2.length], 2);
-													var np = parseInt(brule[num] || '0');
+										var key = '' + row1 + row2 + '_' + this.props.rule;
 
-													/*		if (i === 1) {
-	            		    console.log('brule', brule, 'i',i, '' + row2[mod((i - 1), row2.length)] + row2[(i) % row2.length] + row2[(i+1) % row2.length], '===', num, brule + '[' + num + ']', np)
-	            		}*/
+										if (cache[key]) {
+													next = cache[key];
+										} else {
+													for (var i = 0; i < row2.length; i++) {
+																var num = parseInt('' + row2[mod(i - 1, row2.length)] + row2[i % row2.length] + row2[(i + 1) % row2.length], 2);
+																var np = parseInt(brule[num] || '0');
 
-													if (np === 1) {
-																next[i % row2.length] = row1[i % row2.length] === 0 ? 1 : 0;
-													} else {
-																next[i % row2.length] = row1[i % row2.length];
+																/*		if (i === 1) {
+	                 console.log('brule', brule, 'i',i, '' + row2[mod((i - 1), row2.length)] + row2[(i) % row2.length] + row2[(i+1) % row2.length], '===', num, brule + '[' + num + ']', np)
+	                 }*/
+
+																if (np === 1) {
+																			next[i % row2.length] = row1[i % row2.length] === 0 ? 1 : 0;
+																} else {
+																			next[i % row2.length] = row1[i % row2.length];
+																}
 													}
 										}
-
+										row1 = row2;
 										row2 = next;
-
 										next = [];
 							}
 
@@ -763,11 +768,7 @@
 													for (var i = -1; i < 9; i++) {
 																var row = j === 0 ? that.state.firstrow : that.state.secondrow;
 																if (row) {
-																			if (row[cx + i] === 1) {
-																						that.context.fillStyle = "pink";
-																			} else {
-																						that.context.fillStyle = "white";
-																			}
+																			that.context.fillStyle = that.getColor(that.state.secondrow, that.state.firstrow, cx + i);
 																			that.context.fillRect((cx + i) * that.state.scale, (cy + j) * that.state.scale, that.state.scale, that.state.scale);
 																}
 													}
@@ -778,8 +779,8 @@
 							}
 				},
 
-				rrow: function rrow() {
-							this.setState({ firstrow: this.props.rrow(), secondrow: this.props.rrow() });
+				emptyrow: function emptyrow() {
+							this.setState({ firstrow: this.props.emptyrow(), secondrow: this.props.emptyrow() });
 				},
 				scaleup: function scaleup() {
 							this.setState({ scale: this.state.scale + 1 });
@@ -788,9 +789,10 @@
 							this.setState({ scale: this.state.scale - 1 });
 				},
 				goup: function goup() {
-							/*	var next10 = this.calcnext(this.state.firstrow, this.state.secondrow, 10);
-	      	var next11 = this.calcnext(this.state.firstrow, next10, 10);
-	      	this.setState({firstrow: next10}) */
+							var brule = this.props.rule.toString(2).split('').reverse().join('');
+							var next10 = this.calcnext(this.state.firstrow, this.state.secondrow, 20, brule);
+							var next11 = this.calcnext(this.state.firstrow, this.state.secondrow, 21, brule);
+							this.setState({ firstrow: next10, secondrow: next11 });
 				},
 				download: function download(e) {
 							e.target.href = this.refs.canvas.toDataURL('image/png');
@@ -806,8 +808,8 @@
 													null,
 													_react2.default.createElement(
 																"button",
-																{ onClick: this.rrow },
-																"random row"
+																{ onClick: this.emptyrow },
+																"clear"
 													),
 													_react2.default.createElement(
 																"div",
@@ -859,6 +861,11 @@
 				getInitialState: function getInitialState() {
 							return { ruleText: this.props.location.query.rule };
 				},
+				componentDidMount: function componentDidMount() {
+							if (!this.props.location.query.rule) {
+										this.setRule(233);
+							}
+				},
 				routerWillLeave: function routerWillLeave(nextLocation) {
 							return null;
 				},
@@ -872,7 +879,7 @@
 							var newrule = _.random(rules);
 							this.setRule(newrule);
 				},
-				rrow: function rrow() {
+				emptyrow: function emptyrow() {
 							var row = [];
 							for (var i = 0; i < w; i++) {
 										row.push(0);
@@ -883,7 +890,7 @@
 							this.setState({ ruleText: e.target.value });
 				},
 				render: function render() {
-							var rule = this.props.location.query.rule ? parseInt(this.props.location.query.rule) : _.random(rules);
+							var rule = parseInt(this.props.location.query.rule);
 							console.log('rendering app', rule);
 							return _react2.default.createElement(
 										"div",
@@ -899,7 +906,7 @@
 													{ onClick: this.rrule },
 													"random rule"
 										),
-										_react2.default.createElement(Toma, { w: w, scale: 1, rule: rule, rrow: this.rrow, h: 500, y: 0 })
+										_react2.default.createElement(Toma, { w: w, scale: 1, rule: rule, emptyrow: this.emptyrow, h: 500, y: 0 })
 							);
 				}
 	});
