@@ -76,10 +76,10 @@ var cache = {};
 
 const Toma = React.createClass({
     getInitialState: function() {
+	var frow = this.props.emptyrow();
 	var srow = this.props.emptyrow();
-	//	srow[299] = srow[301] = 1;
-	var that = this;
-        return {firstrow: this.props.emptyrow(), secondrow: srow, scale: this.props.scale, y:this.props.y};
+	var that = this;	
+        return {firstrow: frow, secondrow: srow, scale: this.props.scale, y:this.props.y};
     },
     componentDidMount: function() {
 /*	var dr1 = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
@@ -93,6 +93,7 @@ const Toma = React.createClass({
 //	console.log(this.calcnext(dr2,dr2));
 
 	this.context = this.refs.canvas.getContext('2d');
+	this.updateseed();
 	this.paint();
     },
     shouldComponentUpdate: function(pprops, pstate) {
@@ -115,10 +116,35 @@ const Toma = React.createClass({
 		return true;
 	    }
 	
+	if ( pprops.seed !== this.props.seed) {
+	    this.updateseed(pprops)
+	}
 	
 	console.log('not updating...')
 	return false;
 	
+    },
+    updateseed: function(nprops) {
+	nprops = nprops || this.props;
+	var srow = _.clone(this.state.secondrow);
+	var bseed = nprops.seed.toString(2).split('').reverse().join('');
+
+	for (var i = 0; i < srow.length; i++) {
+	    if (parseInt(bseed[i]) === 1) {
+		srow[srow.length - i - 1] = 1;
+	    }
+	    else {
+		srow[srow.length - i - 1] = 0;
+	    }
+	}
+	console.log('bseed', bseed, srow.join(''))
+	this.setState({secondrow:srow})
+
+    },
+    componentWillUpdate: function(nprops) {
+	if (this.props.seed !== nprops.seed) {
+	    this.updateseed(nprops);
+	}
     },
     componentDidUpdate: function() {
 	this.context = this.refs.canvas.getContext('2d');
@@ -136,11 +162,13 @@ const Toma = React.createClass({
 	else {
 	    srow[x] = (srow[x] === 1 ? 0 : 1);
 	}
-	this.setState({firstrow:frow,secondrow:srow})
+	this.setState({firstrow:frow})
+	this.props.seedit(srow);
     },
     getColor: function(row,prow,i) {
 	if (row[i] === 1) {
-	    return brew[row[i+1] + row[i-1] + prow[i+1] + prow[i-1] + prow[i]];
+	    var brewdex = row[i+1] + row[i-1] + prow[i+1] + prow[i-1] + prow[i];
+	    return brew[brewdex];
 	}
 	else {
 	    return brew[0];
@@ -207,6 +235,7 @@ const Toma = React.createClass({
 	console.timeEnd('paint');
     },
     paintCursor: function(cx, cy) {
+	console.log('painting cursor')
 	var that = this;
 	if (this.context.fillStyle) {
 	    console.log('cursor', this.context, cy);
@@ -268,7 +297,7 @@ const Toma = React.createClass({
 	    <div>
 	    <canvas ref="canvas" width={this.props.w*this.state.scale} height={this.props.h*this.state.scale} />
 	    </div>
-	    <Cursor paint={this.paintCursor} setBit={this.setBit} frow={this.state.firstrow} srow={this.state.secondrow}/>
+	    <Cursor paint={this.paintCursor} setBit={this.setBit} frow={this.state.firstrow} srow={this.state.secondrow} />
 	    </div>
 		
 	)
@@ -283,22 +312,31 @@ const App = React.createClass({
         return {ruleText:this.props.location.query.rule};
     },
     componentDidMount: function() {
-	if (!this.props.location.query.rule) {
-	    this.setRule(233);
+	if (!this.props.location.query.rule || !this.props.location.query.seed) {
+	    this.nav(233,0);
 	}
+
     },
     routerWillLeave: function(nextLocation) {
         return null;
     },
-    setRule: function(r) {
-        this.history.pushState(null, '/tomata/', {rule:r});
+    nav: function(r,s) {
+	r = r || this.props.location.query.rule  || 233;
+	s = (s !== undefined ? s : (this.props.location.query.seed || 0));
+        this.history.pushState(null, '/tomata/', {rule:r, seed: s});
+    },
+    seedit: function(srow) {
+	window.srowx = srow;
+	var seed = parseInt(srow.join(''),2);
+	console.log('seedit', srow.join(''), '' + seed)
+	this.nav(null, seed)
     },
     setRuleByText: function(e) {
-	this.setRule(parseInt(this.state.ruleText));
+	this.nav(parseInt(this.state.ruleText));
     },
     rrule: function() {
 	var newrule = _.random(rules);
-	this.setRule(newrule)
+	this.nav(newrule)
     },
     emptyrow:function() {
 	var row = [];
@@ -312,13 +350,14 @@ const App = React.createClass({
     },
     render: function() {
 	var rule = parseInt(this.props.location.query.rule);
-	console.log('rendering app', rule)
+	var seed = parseFloat(this.props.location.query.seed);
+	console.log('rendering app', rule, ''+ seed)
 	return (
 	    <div>
 	    <input ref="rule" value={this.state.ruleText} onChange={this.changeRuleText} />
 	    <button onClick={this.setRuleByText}>go</button>
 	    <button onClick={this.rrule}>random rule</button>
-	    <Toma w={w} scale={1} rule={rule} emptyrow={this.emptyrow} h={500} y={0} />
+	    <Toma seedit={this.seedit} w={w} scale={1} rule={rule} emptyrow={this.emptyrow} h={500} y={0} seed={seed} />
 	    </div>
 	);
     }

@@ -54,7 +54,7 @@
 /******/ 	
 /******/ 	
 /******/ 	var hotApplyOnUpdate = true;
-/******/ 	var hotCurrentHash = "7e121d648aeb176c1f87"; // eslint-disable-line no-unused-vars
+/******/ 	var hotCurrentHash = "916f521382136a6fabc7"; // eslint-disable-line no-unused-vars
 /******/ 	var hotCurrentModuleData = {};
 /******/ 	var hotCurrentParents = []; // eslint-disable-line no-unused-vars
 /******/ 	
@@ -646,10 +646,10 @@
 				displayName: "Toma",
 
 				getInitialState: function getInitialState() {
+							var frow = this.props.emptyrow();
 							var srow = this.props.emptyrow();
-							//	srow[299] = srow[301] = 1;
 							var that = this;
-							return { firstrow: this.props.emptyrow(), secondrow: srow, scale: this.props.scale, y: this.props.y };
+							return { firstrow: frow, secondrow: srow, scale: this.props.scale, y: this.props.y };
 				},
 				componentDidMount: function componentDidMount() {
 							/*	var dr1 = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
@@ -663,6 +663,7 @@
 							//	console.log(this.calcnext(dr2,dr2));
 
 							this.context = this.refs.canvas.getContext('2d');
+							this.updateseed();
 							this.paint();
 				},
 				shouldComponentUpdate: function shouldComponentUpdate(pprops, pstate) {
@@ -676,8 +677,32 @@
 										return true;
 							}
 
+							if (pprops.seed !== this.props.seed) {
+										this.updateseed(pprops);
+							}
+
 							console.log('not updating...');
 							return false;
+				},
+				updateseed: function updateseed(nprops) {
+							nprops = nprops || this.props;
+							var srow = _.clone(this.state.secondrow);
+							var bseed = nprops.seed.toString(2).split('').reverse().join('');
+
+							for (var i = 0; i < srow.length; i++) {
+										if (parseInt(bseed[i]) === 1) {
+													srow[srow.length - i - 1] = 1;
+										} else {
+													srow[srow.length - i - 1] = 0;
+										}
+							}
+							console.log('bseed', bseed, srow.join(''));
+							this.setState({ secondrow: srow });
+				},
+				componentWillUpdate: function componentWillUpdate(nprops) {
+							if (this.props.seed !== nprops.seed) {
+										this.updateseed(nprops);
+							}
 				},
 				componentDidUpdate: function componentDidUpdate() {
 							this.context = this.refs.canvas.getContext('2d');
@@ -694,11 +719,13 @@
 							} else {
 										srow[x] = srow[x] === 1 ? 0 : 1;
 							}
-							this.setState({ firstrow: frow, secondrow: srow });
+							this.setState({ firstrow: frow });
+							this.props.seedit(srow);
 				},
 				getColor: function getColor(row, prow, i) {
 							if (row[i] === 1) {
-										return brew[row[i + 1] + row[i - 1] + prow[i + 1] + prow[i - 1] + prow[i]];
+										var brewdex = row[i + 1] + row[i - 1] + prow[i + 1] + prow[i - 1] + prow[i];
+										return brew[brewdex];
 							} else {
 										return brew[0];
 							}
@@ -760,6 +787,7 @@
 							console.timeEnd('paint');
 				},
 				paintCursor: function paintCursor(cx, cy) {
+							console.log('painting cursor');
 							var that = this;
 							if (this.context.fillStyle) {
 										console.log('cursor', this.context, cy);
@@ -862,22 +890,30 @@
 							return { ruleText: this.props.location.query.rule };
 				},
 				componentDidMount: function componentDidMount() {
-							if (!this.props.location.query.rule) {
-										this.setRule(233);
+							if (!this.props.location.query.rule || !this.props.location.query.seed) {
+										this.nav(233, 0);
 							}
 				},
 				routerWillLeave: function routerWillLeave(nextLocation) {
 							return null;
 				},
-				setRule: function setRule(r) {
-							this.history.pushState(null, '/tomata/', { rule: r });
+				nav: function nav(r, s) {
+							r = r || this.props.location.query.rule || 233;
+							s = s !== undefined ? s : this.props.location.query.seed || 0;
+							this.history.pushState(null, '/tomata/', { rule: r, seed: s });
+				},
+				seedit: function seedit(srow) {
+							window.srowx = srow;
+							var seed = parseInt(srow.join(''), 2);
+							console.log('seedit', srow.join(''), '' + seed);
+							this.nav(null, seed);
 				},
 				setRuleByText: function setRuleByText(e) {
-							this.setRule(parseInt(this.state.ruleText));
+							this.nav(parseInt(this.state.ruleText));
 				},
 				rrule: function rrule() {
 							var newrule = _.random(rules);
-							this.setRule(newrule);
+							this.nav(newrule);
 				},
 				emptyrow: function emptyrow() {
 							var row = [];
@@ -891,7 +927,8 @@
 				},
 				render: function render() {
 							var rule = parseInt(this.props.location.query.rule);
-							console.log('rendering app', rule);
+							var seed = parseFloat(this.props.location.query.seed);
+							console.log('rendering app', rule, '' + seed);
 							return _react2.default.createElement(
 										"div",
 										null,
@@ -906,7 +943,7 @@
 													{ onClick: this.rrule },
 													"random rule"
 										),
-										_react2.default.createElement(Toma, { w: w, scale: 1, rule: rule, emptyrow: this.emptyrow, h: 500, y: 0 })
+										_react2.default.createElement(Toma, { seedit: this.seedit, w: w, scale: 1, rule: rule, emptyrow: this.emptyrow, h: 500, y: 0, seed: seed })
 							);
 				}
 	});
