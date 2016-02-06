@@ -54,7 +54,7 @@
 /******/ 	
 /******/ 	
 /******/ 	var hotApplyOnUpdate = true;
-/******/ 	var hotCurrentHash = "ca7cfb04aadee983829f"; // eslint-disable-line no-unused-vars
+/******/ 	var hotCurrentHash = "cac33772e063e012ba1c"; // eslint-disable-line no-unused-vars
 /******/ 	var hotCurrentModuleData = {};
 /******/ 	var hotCurrentParents = []; // eslint-disable-line no-unused-vars
 /******/ 	
@@ -689,9 +689,9 @@
 							this.setState({ firstrow: frow });
 							this.props.setSrowBit(x, y);
 				},
-				getColor: function getColor(row, prow, i) {
+				getColor: function getColor(row, row2, i) {
 							if (row[i] === 1) {
-										var brewdex = row[i + 1] + row[i - 1] + prow[i + 1] + prow[i - 1] + prow[i];
+										var brewdex = parseInt('' + row2[mod(i - 1, row2.length)] + row2[i % row2.length] + row2[(i + 1) % row2.length], 2);
 										return brew[brewdex];
 							} else {
 										return brew[0];
@@ -859,7 +859,7 @@
 							var rule = this.props.location.query.rule;
 							var srow = this.props.location.query.srow;
 
-							this.nav(rule, srow.split);
+							this.nav(rule, srow ? srow.split('') : undefined);
 				},
 				routerWillLeave: function routerWillLeave(nextLocation) {
 							return null;

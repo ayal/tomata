@@ -126,9 +126,9 @@ const Toma = React.createClass({
 	this.setState({firstrow:frow});
 	this.props.setSrowBit(x,y);
     },
-    getColor: function(row,prow,i) {
+    getColor: function(row,row2,i) {
 	if (row[i] === 1) {
-	    var brewdex = row[i+1] + row[i-1] + prow[i+1] + prow[i-1] + prow[i];
+	    var brewdex = parseInt('' +  row2[mod((i - 1), row2.length)] + row2[(i) % row2.length] + row2[(i+1) % row2.length], 2);
 	    return brew[brewdex];
 	}
 	else {
@@ -274,7 +274,7 @@ const App = React.createClass({
 	var rule = this.props.location.query.rule;
 	var srow = this.props.location.query.srow
 	
-	this.nav(rule,srow.split);
+	this.nav(rule, (srow ? srow.split('') : undefined));
 
     },
     routerWillLeave: function(nextLocation) {
