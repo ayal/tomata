@@ -77,23 +77,12 @@ var cache = {};
 const Toma = React.createClass({
     getInitialState: function() {
 	var frow = this.props.emptyrow();
-	var srow = this.props.emptyrow();
 	var that = this;	
-        return {firstrow: frow, secondrow: srow, scale: this.props.scale, y:this.props.y};
+        return {firstrow: frow, scale: this.props.scale, y:this.props.y};
     },
     componentDidMount: function() {
-/*	var dr1 = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
-	var dr2 = [1,1,1,1,1,0,1,0,1,1,0,0,0,1,1,0,1,0,0,0,1,0,0,0];
-	dr1 = _.groupBy(dr1,function(x,i){return Math.floor(i/3)})
-	dr2 = _.groupBy(dr2,function(x,i){return Math.floor(i/3)})
-	var that = this;
-	_.each(dr1, function(v,k) {
-	    console.log([0,1,0],dr2[k],'>',that.calcnext([0,1,0],dr2[k]));
-	}) */
-//	console.log(this.calcnext(dr2,dr2));
 
 	this.context = this.refs.canvas.getContext('2d');
-	this.updateseed();
 	this.paint();
     },
     shouldComponentUpdate: function(pprops, pstate) {
@@ -101,6 +90,7 @@ const Toma = React.createClass({
 	    pprops.h !== this.props.h ||
 	    pprops.rule !== this.props.rule ||
 	    pprops.y !== this.props.y ||
+	    pprops.secondrow.join('') !== this.props.secondrow.join('') ||
 	    pprops.scale !== this.props.scale) {
 	    console.log('props changed, updating...')
 	    return true;
@@ -108,7 +98,6 @@ const Toma = React.createClass({
 
 
 	if (pstate.firstrow.join() !== this.state.firstrow.join() ||
-	    pstate.secondrow.join() !== this.state.secondrow.join() ||
 	    pstate.y !== this.state.y ||
 	    pstate.scale !== this.state.scale)
 	    {
@@ -116,35 +105,10 @@ const Toma = React.createClass({
 		return true;
 	    }
 	
-	if ( pprops.seed !== this.props.seed) {
-	    this.updateseed(pprops)
-	}
 	
 	console.log('not updating...')
 	return false;
 	
-    },
-    updateseed: function(nprops) {
-	nprops = nprops || this.props;
-	var srow = _.clone(this.state.secondrow);
-	var bseed = nprops.seed.toString(2).split('').reverse().join('');
-
-	for (var i = 0; i < srow.length; i++) {
-	    if (parseInt(bseed[i]) === 1) {
-		srow[srow.length - i - 1] = 1;
-	    }
-	    else {
-		srow[srow.length - i - 1] = 0;
-	    }
-	}
-	console.log('bseed', bseed, srow.join(''))
-	this.setState({secondrow:srow})
-
-    },
-    componentWillUpdate: function(nprops) {
-	if (this.props.seed !== nprops.seed) {
-	    this.updateseed(nprops);
-	}
     },
     componentDidUpdate: function() {
 	this.context = this.refs.canvas.getContext('2d');
@@ -155,15 +119,12 @@ const Toma = React.createClass({
     setBit: function(x,y) {
 	console.log('setbit',x,y)
 	var frow = _.clone(this.state.firstrow);
-	var srow = _.clone(this.state.secondrow);
+
 	if (y === 0) {
 	    frow[x] = (frow[x] === 1 ? 0 : 1);
 	}
-	else {
-	    srow[x] = (srow[x] === 1 ? 0 : 1);
-	}
-	this.setState({firstrow:frow})
-	this.props.seedit(srow);
+	this.setState({firstrow:frow});
+	this.props.setSrowBit(x,y);
     },
     getColor: function(row,prow,i) {
 	if (row[i] === 1) {
@@ -203,7 +164,7 @@ const Toma = React.createClass({
 		      }*/
 
 		    if (np === 1) {
-			next[(i) % row2.length] = (row1[(i) % row2.length] === 0 ? 1 : 0);
+			next[(i) % row2.length] = (row1[(i) % row2.length] !== 1 ? 1 : 0);
 		    }
 		    else {
 			next[(i) % row2.length] = row1[(i) % row2.length];
@@ -222,7 +183,7 @@ const Toma = React.createClass({
     paint: function(cy) {
 	console.time('paint');
 	var row1 = this.state.firstrow;
-	var row2 = this.state.secondrow;
+	var row2 = this.props.secondrow;
 	var brule = this.props.rule.toString(2).split('').reverse().join('');
 	for (var y = 0; y < this.props.h; y++) {
 //	    this.drawrow(row1,y);
@@ -242,9 +203,9 @@ const Toma = React.createClass({
 
 	     for (var j = 0; j < 2; j++) {
 		for (var i = -1; i < 9; i++) {
-		    var row = (j === 0 ? that.state.firstrow : that.state.secondrow);
+		    var row = (j === 0 ? that.state.firstrow : that.props.secondrow);
 		    if (row) {
-			that.context.fillStyle=that.getColor(that.state.secondrow, that.state.firstrow, cx + i);
+			that.context.fillStyle=that.getColor(that.props.secondrow, that.state.firstrow, cx + i);
 			that.context.fillRect((cx+i)*that.state.scale, (cy+j)*that.state.scale, that.state.scale, that.state.scale);
 		    }
 		}
@@ -256,10 +217,6 @@ const Toma = React.createClass({
 	}
 
     },
-
-    emptyrow: function() {
-	this.setState({firstrow: this.props.emptyrow(), secondrow: this.props.emptyrow()})
-    },
     scaleup: function() {
 	this.setState({scale: this.state.scale + 1})
     },
@@ -268,21 +225,21 @@ const Toma = React.createClass({
     },
     goup: function() {
 	var brule = this.props.rule.toString(2).split('').reverse().join('');
-	var next10 = this.calcnext(this.state.firstrow, this.state.secondrow, 20,brule);
-	var next11 = this.calcnext(this.state.firstrow, this.state.secondrow, 21,brule);
-	this.setState({firstrow: next10, secondrow: next11})
+	var next10 = this.calcnext(this.state.firstrow, this.props.secondrow, 20,brule);
+	var next11 = this.calcnext(this.state.firstrow, this.props.secondrow, 21,brule);
+	this.setState({firstrow: next10})
+	this.props.setSrow(next11);
     },
     download: function(e) {
 	e.target.href = this.refs.canvas.toDataURL('image/png');
 	e.target.download = this.props.rule + '__' + this.state.scale + '.png';
-
     },
     render: function() {
 	console.log('rendering toma')
 	return (
 	    <div>
 	    <div>
-	    <button onClick={this.emptyrow}>clear</button>
+	    <button onClick={this.props.clear}>clear</button>
 	    
 	    <div>
 	    <button onClick={this.scaleup}>+</button>
@@ -297,7 +254,7 @@ const Toma = React.createClass({
 	    <div>
 	    <canvas ref="canvas" width={this.props.w*this.state.scale} height={this.props.h*this.state.scale} />
 	    </div>
-	    <Cursor paint={this.paintCursor} setBit={this.setBit} frow={this.state.firstrow} srow={this.state.secondrow} />
+	    <Cursor paint={this.paintCursor} setBit={this.setBit} frow={this.state.firstrow} srow={this.props.secondrow} />
 	    </div>
 		
 	)
@@ -309,12 +266,15 @@ var w = 300;
 const App = React.createClass({
     mixins: [ Lifecycle, History ],
     getInitialState: function() {
+
         return {ruleText:this.props.location.query.rule};
     },
     componentDidMount: function() {
-	if (!this.props.location.query.rule || !this.props.location.query.seed) {
-	    this.nav(233,0);
-	}
+	this.hashHistory=createHashHistory();
+	var rule = this.props.location.query.rule;
+	var srow = this.props.location.query.srow
+	
+	this.nav(rule,srow.split);
 
     },
     routerWillLeave: function(nextLocation) {
@@ -322,14 +282,33 @@ const App = React.createClass({
     },
     nav: function(r,s) {
 	r = r || this.props.location.query.rule  || 233;
-	s = (s !== undefined ? s : (this.props.location.query.seed || 0));
-        this.history.pushState(null, '/tomata/', {rule:r, seed: s});
+	var secondrow = (this.props.location.hash && this.props.location.hash.split('?')[0].split('#')[1].split('=')[1]) || 0 ;
+	s = (s !== undefined ? s : secondrow);
+	this.history.pushState(null, '/tomata/', {rule:r});
+        this.hashHistory.push('secondrow=' + s);
     },
-    seedit: function(srow) {
-	window.srowx = srow;
-	var seed = parseInt(srow.join(''),2);
-	console.log('seedit', srow.join(''), '' + seed)
-	this.nav(null, seed)
+    setSrowBit: function(x) {
+	console.log('set srow bit', x, this.props.location.hash)
+	var secondrow = this.props.location.hash.split('?')[0].split('#')[1].split('=')[1].split('');
+	for (var i = 0; i < w; i++) {
+	    if (secondrow[i] === undefined) {
+		secondrow[i] = '0';
+	    }
+	    
+	    if (i === x) {
+		secondrow[i] = parseInt(secondrow[i]) === 1 ? 0 : 1;
+	    }
+	    else {
+		secondrow[i] = parseInt(secondrow[i]) === 1 ? 1 : 0;
+	    }
+	}
+
+	this.hashHistory.push('secondrow=' + secondrow.join(''));
+//	this.forceUpdate();
+    },
+
+    setSrow: function(secondrow) {
+	this.hashHistory.push('secondrow=' + secondrow.join(''));
     },
     setRuleByText: function(e) {
 	this.nav(parseInt(this.state.ruleText));
@@ -345,33 +324,48 @@ const App = React.createClass({
 	}
 	return row;
     },
+    clear: function() {
+	this.nav(null,0);
+    },
     changeRuleText: function(e) {
 	this.setState({ruleText:e.target.value})
     },
     render: function() {
+	console.log('rendering app', this.props.location);
+	
 	var rule = parseInt(this.props.location.query.rule);
-	var seed = parseFloat(this.props.location.query.seed);
-	console.log('rendering app', rule, ''+ seed)
+	var secondrow = this.props.location.hash ? this.props.location.hash.split('?')[0].split('#')[1].split('=')[1].split('') : ['0'];
+
+	for (var i = 0; i < w; i++) {
+	    if (secondrow[i] === undefined) {
+		secondrow[i] = '0';
+	    }
+	    
+	    secondrow[i] = parseInt(secondrow[i]) === 1 ? 1 : 0;
+	}
+
+	
 	return (
 	    <div>
 	    <input ref="rule" value={this.state.ruleText} onChange={this.changeRuleText} />
 	    <button onClick={this.setRuleByText}>go</button>
 	    <button onClick={this.rrule}>random rule</button>
-	    <Toma seedit={this.seedit} w={w} scale={1} rule={rule} emptyrow={this.emptyrow} h={500} y={0} seed={seed} />
+	    <Toma w={w} scale={1} rule={rule} clear={this.clear} emptyrow={this.emptyrow} h={500} y={0} secondrow={secondrow} setSrow={this.setSrow} setSrowBit={this.setSrowBit} />
 	    </div>
 	);
     }
 });
 
 import createBrowserHistory from 'history/lib/createBrowserHistory';
+import createHashHistory from 'history/lib/createHashHistory';
 
 render((
-	<Router history={createBrowserHistory()}>
+    <Router history={createBrowserHistory()}>
     <Route path="/" component={App}>
     </Route>
     <Route path="/tomata/" component={App}>
-        </Route>
-        </Router>), document.getElementById('root'));
+    </Route>
+    </Router>), document.getElementById('root'));
 
 
 
