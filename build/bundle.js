@@ -54,7 +54,7 @@
 /******/ 	
 /******/ 	
 /******/ 	var hotApplyOnUpdate = true;
-/******/ 	var hotCurrentHash = "cac33772e063e012ba1c"; // eslint-disable-line no-unused-vars
+/******/ 	var hotCurrentHash = "e4cbccf655ee9b716773"; // eslint-disable-line no-unused-vars
 /******/ 	var hotCurrentModuleData = {};
 /******/ 	var hotCurrentParents = []; // eslint-disable-line no-unused-vars
 /******/ 	
@@ -583,6 +583,7 @@
 	}
 
 	var brew = ["#f7f4f9", "#e7e1ef", "#d4b9da", "#c994c7", "#df65b0", "#e7298a", "#ce1256", "#980043", "#67001f"];
+	var brewback = ["#f7fbff", "#deebf7", "#c6dbef", "#9ecae1", "#6baed6", "#4292c6", "#2171b5", "#08519c", "#08306b"];
 
 	var k = 1;
 	var cols = 3;
@@ -690,11 +691,12 @@
 							this.props.setSrowBit(x, y);
 				},
 				getColor: function getColor(row, row2, i) {
+							var brewdex = parseInt('' + row2[mod(i - 1, row2.length)] + row2[i % row2.length] + row2[(i + 1) % row2.length], 2);
 							if (row[i] === 1) {
-										var brewdex = parseInt('' + row2[mod(i - 1, row2.length)] + row2[i % row2.length] + row2[(i + 1) % row2.length], 2);
+
 										return brew[brewdex];
 							} else {
-										return brew[0];
+										return brewback[brewdex];
 							}
 				},
 				drawrow: function drawrow(row, y, prow) {
